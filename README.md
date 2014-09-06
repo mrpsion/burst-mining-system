@@ -78,7 +78,7 @@ If this is a "master" node, i.e. one started with --system.hosts, you can view a
 Please report any issues you find<br/>
 
 
-Burst: BURST-JSES-5WN7-PHD8-7CQJ6  Bitcoin: BURST-JSES-5WN7-PHD8-7CQJ6
+Burst: BURST-JSES-5WN7-PHD8-7CQJ6  Bitcoin: 1JiwTkmeztRh7WSD9DaRxkJCYxDfMJvKoJ
 
 
 

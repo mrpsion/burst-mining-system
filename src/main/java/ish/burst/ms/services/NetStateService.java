@@ -101,7 +101,7 @@ public class NetStateService {
         @Override
         public void run() {
             try {
-                NetState requestedState = restTemplate.getForObject(poolUrl + "/pool/getMiningInfo", NetState.class);
+                NetState requestedState = restTemplate.getForObject(poolUrl + "/burst?requestType=getMiningInfo", NetState.class);
                 if (currentState == null) {
                     setCurrentState(requestedState);
                     miningService.stopAndRestartMining();

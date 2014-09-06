@@ -14,6 +14,9 @@
         <version>1.1.5.RELEASE</version>
     </parent>
 
+    <properties>
+            <start-class>ish.burst.ms.MiningSystemApplication</start-class>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -44,6 +47,12 @@
             <artifactId>commons-io</artifactId>
             <version>2.4</version>
         </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.50</version>
+        </dependency>
+
 
     </dependencies>
 

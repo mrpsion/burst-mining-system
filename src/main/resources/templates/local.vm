@@ -38,8 +38,6 @@
                         <dd>$netState.generationSignatureForDisplay</dd>
                         <dt>Base Target</dt>
                         <dd>$netState.baseTarget</dd>
-                        <dt>Target Deadline</dt>
-                        <dd>$netState.targetDeadline</dd>
                     </dl>
                 </div>
                 <!-- /.panel-body -->

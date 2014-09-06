@@ -4,12 +4,15 @@ import fr.cryptohash.Shabal256;
 import ish.burst.ms.objects.MiningPlot;
 import ish.burst.ms.objects.NetState;
 import ish.burst.ms.objects.PlotFile;
+import nxt.crypto.Crypto;
+import nxt.util.Convert;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.HttpMethod;
@@ -28,8 +31,13 @@ import java.io.StringWriter;
 import java.math.BigInteger;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by ihartney on 9/3/14.
@@ -68,12 +76,37 @@ public class MiningService {
 
     ArrayList<PlotFileMiner> minerThreads = new ArrayList<PlotFileMiner>();
 
+    Map<Long, String> loadedPassPhrases = new HashMap<Long, String>();
+
+
     @PostConstruct
     public void init(){
         List<HttpMessageConverter<?>> converters = new ArrayList<HttpMessageConverter<?>>();
         converters.add(new StringHttpMessageConverter());
         restTemplate.setMessageConverters(converters);
+        loadPassPhrases();
     }
+
+
+    private void loadPassPhrases(){
+        try {
+            List<String> passphrases = Files.readAllLines(Paths.get("passphrases.txt"), Charset.forName("US-ASCII"));
+            for(String ps : passphrases) {
+                if(!ps.isEmpty()) {
+                    byte[] publicKey = Crypto.getPublicKey(ps);
+                    byte[] publicKeyHash = Crypto.sha256().digest(publicKey);
+                    Long id = Convert.fullHashToId(publicKeyHash);
+                    loadedPassPhrases.put(id, ps);
+                    LOGGER.info("Added key: {" + ps + "} -> {" + Convert.toUnsignedLong(id) + "}");
+                }
+            }
+        } catch (IOException e) {
+            LOGGER.info("Warning: no passphrases.txt found");
+
+        }
+    }
+
+
 
     public void stopAndRestartMining(){
         for(PlotFileMiner miner : minerThreads){
@@ -150,18 +183,22 @@ public class MiningService {
 
         private void checkChunkPool(byte[] chunk){
             Shabal256 md = new Shabal256();
+            BigInteger lowest = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
+            long lowestscoop = 0;
             for(long i = 0; i < plotFile.getStaggeramt(); i++) {
                 md.reset();
                 md.update(processing.getGensig());
                 md.update(chunk, (int) (i * MiningPlot.SCOOP_SIZE), MiningPlot.SCOOP_SIZE);
                 byte[] hash = md.digest();
                 BigInteger num = new BigInteger(1, new byte[] {hash[7], hash[6], hash[5], hash[4], hash[3], hash[2], hash[1], hash[0]});
-                BigInteger deadline = num.divide(BigInteger.valueOf(processing.getBaseTargetL()));
-                if(deadline.compareTo(BigInteger.valueOf(processing.getTargetDeadlineL())) <= 0) {
-                    shareExecutor.execute(new SubmitShare(plotFile.getStartnonce()+i, plotFile));
+                if(num.compareTo(lowest) < 0) {
+                    lowest = num;
+                    lowestscoop = plotFile.getStartnonce() + i;
                 }
+
                 if(!running)return;
             }
+            shareExecutor.execute(new SubmitShare(lowestscoop,plotFile));
 
         }
     }
@@ -183,7 +220,8 @@ public class MiningService {
             try {
                 String shareRequest = plotFile.getAddress()+":"+nonce+":"+processing.getHeight()+"\n";
                 LOGGER.info("Submitting Share {"+shareRequest+"}");
-                String response = restTemplate.postForObject(poolUrl + "/pool/submitWork",shareRequest,String.class);
+                String request = poolUrl+"/burst?requestType=submitNonce&secretPhrase=pool-mining&nonce="+Convert.toUnsignedLong(nonce)+"&accountId="+Convert.toUnsignedLong(plotFile.getAddress());
+                String response = restTemplate.postForObject(request,shareRequest,String.class);
                 LOGGER.info("Response {"+response+"}");
                 plotFile.addShare();
             }catch(Exception ex){

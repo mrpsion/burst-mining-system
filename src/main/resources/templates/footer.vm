@@ -1,0 +1,24 @@
+</div>
+<!-- /#wrapper -->
+
+<footer>
+    <div class="container">
+        <p>Burst Mining System v1 by MrPsion burst: BURST-JSES-5WN7-PHD8-7CQJ6 bitcoin: 1JiwTkmeztRh7WSD9DaRxkJCYxDfMJvKoJ</p>
+    </div>
+</footer>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="js/bootstrap.min.js"></script>
+
+<!-- Metis Menu Plugin JavaScript -->
+<script src="js/plugins/metisMenu/metisMenu.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="js/sb-admin-2.js"></script>
+
+<script src="js/plugins/morris/raphael.min.js"></script>
+<script src="js/plugins/morris/morris.min.js"></script>
+
+</body>
+
+</html>

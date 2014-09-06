@@ -1,0 +1,222 @@
+
+#include("header.vm")
+
+<!-- Page Content -->
+<div id="page-wrapper">
+    <div class="row">
+        <div class="col-lg-12">
+            <h1 class="page-header">Local Dashboard <small>Stats for this miner</small></h1>
+        </div>
+        <!-- /.col-lg-12 -->
+    </div>
+    <!-- /.row -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    Hard Drive Usage
+                </div>
+                <!-- /.panel-heading -->
+                <div class="panel-body">
+                    <div id="harddrive-usage"></div>
+                </div>
+                <!-- /.panel-body -->
+            </div>
+            <!-- /.panel -->
+        </div>
+        <div class="col-lg-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    Current Block
+                </div>
+                <!-- /.panel-heading -->
+                <div class="panel-body">
+                    <dl class="dl-horizontal">
+                        <dt>Height</dt>
+                        <dd>$netState.height</dd>
+                        <dt>Generation Signature</dt>
+                        <dd>$netState.generationSignatureForDisplay</dd>
+                        <dt>Base Target</dt>
+                        <dd>$netState.baseTarget</dd>
+                        <dt>Target Deadline</dt>
+                        <dd>$netState.targetDeadline</dd>
+                    </dl>
+                </div>
+                <!-- /.panel-body -->
+            </div>
+            <!-- /.panel -->
+        </div>
+
+        <div class="col-lg-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    Mining Stats
+                </div>
+                <!-- /.panel-heading -->
+                <div class="panel-body">
+
+
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered table-hover">
+                            <thead>
+                            <tr>
+                                <th>Plot</th>
+                                <th>Shares</th>
+                                <th>Times Mined</th>
+                                <th>Times Interupted</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            #foreach($plot in $plots)
+                            <tr>
+                                <td>$plot.UUID</td>
+                                <td>$plot.shares</td>
+                                <td>$plot.checked</td>
+                                <td>$plot.interrupted</td>
+                            </tr>
+                            #end
+                            </tbody>
+                        </table>
+                    </div>
+                    #foreach($plot in $plots)
+
+                    #end
+                </div>
+                <!-- /.panel-body -->
+            </div>
+            <!-- /.panel -->
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    Plots
+                    <div class="btn-group pull-right">
+                        <button type="button" class="btn btn-default btn-xs " data-toggle="modal" data-target="#addPlotModal">
+                            <span class="glyphicon glyphicon-plus"></span>
+                        </button>
+                    </div>
+                </div>
+                <!-- /.panel-heading -->
+                <div class="panel-body">
+                    #foreach($plot in $plots)
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            Plot - $plot.UUID
+                        </div>
+                        <!-- /.panel-heading -->
+                        <div class="panel-body">
+
+                            <dl class="dl-horizontal">
+                                <dt>Address</dt>
+                                <dd>$plot.address</dd>
+                                <dt>Start Nonce</dt>
+                                <dd>$plot.startnonce</dd>
+                                <dt>Number of Nonce</dt>
+                                <dd>$plot.plots</dd>
+                                <dt>Stagger</dt>
+                                <dd>$plot.staggeramt</dd>
+                            </dl>
+
+
+                            <dl class="dl-horizontal">
+                                <dt>Expected Size</dt>
+                                <dd>$plot.expectedFileSizeGb Gb</dd>
+                                <dt>Actual Size</dt>
+                                <dd>$plot.fileSizeGb Gb</dd>
+
+                            </dl>
+
+
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" aria-valuenow="$plot.percentageComplete" aria-valuemin="0" aria-valuemax="100" style="width: $plot.percentageComplete%;">
+                                    $plot.percentageComplete%
+                                </div>
+                            </div>
+                            #if($plot.percentageComplete == 0)
+                            <div class="btn-group pull-right">
+                                <form action="/generateplot" method="post">
+                                       <input type="hidden" name="UUID" value="$plot.UUID" >
+                                    <button type="submit" class="btn btn-primary">Generate Plot</button>
+                                </form>
+                            </div>
+                            #end
+                        </div>
+
+                    </div>
+                    #end
+                </div>
+                <!-- /.panel-body -->
+            </div>
+            <!-- /.panel -->
+        </div>
+
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="addPlotModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="/addplot" method="post">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">Create Plot</h4>
+                </div>
+                <div class="modal-body">
+
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input class="form-control" name="address">
+                            <p class="help-block">Numeric address of your burst wallet for pool V2, or pool assigned address for V1.</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Start Nonce</label>
+                            <input class="form-control" name="startnonce">
+                            <p class="help-block">The Nonce to start generation from.</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Number of Plots</label>
+                            <input class="form-control" name="plots">
+                            <p class="help-block">The number of plots/nonces to generate in this file.</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Stagger Amount</label>
+                            <input class="form-control" name="staggeramt">
+                            <p class="help-block">The number of plots to generate in memory before writing to file.</p>
+                        </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Create Plot</button>
+                </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
+</div>
+<!-- /#page-wrapper -->
+
+<script>
+    $(document).ready(function() {
+        Morris.Donut({
+            element: 'harddrive-usage',
+            data: [{
+                label: "Free Space",
+                value: $fileSystemInfo.useableSpaceMb
+            },
+            {
+                label: "Used Space",
+                value: $fileSystemInfo.totalSpaceMb - $fileSystemInfo.useableSpaceMb
+            }],
+            resize: true
+        });
+    });
+
+</script>
+
+#include("footer.vm")

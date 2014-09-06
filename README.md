@@ -48,7 +48,7 @@ want to use 2 threads to generate plots you would start the mining system like t
 java -jar mining-system-1.0.jar --pool.url=http://{pool.hostname}:{pool.port} --plot.generation.threads=2
 
 
-<h2>System Monitoring<h2>
+<h2>System Monitoring</h2>
 
 This mining system allow you to nominate 1 miner (or more if you want, but it would just be more configuration to do) to 
 give you visibility on all the other miners in your system.  To enable this simply include the following argument when you
@@ -59,7 +59,26 @@ start the nominated miner.
 you do not need to include the local miner in this list, it will fetch its own stats automatically.
 
 
+<h2>Usage</h2>
 
+Once you have built the system and started it. You can use it.<br/>
+It will automatically start mining any plots start startup or when a block changes.<br/>
+
+To access the UI go to http://host:port where you installed the miner, the default port is 8180
+
+To generate a plot, click the + icon in the plots section and fill in the information. Its the same data as the PocMiner, just without the threads, as this is a system level setting here.<br/>
+
+Once you submit that form, you should see your new plot. Click the generate button next to the plot to begin the generation process.<br/>
+
+You can generate multiple plots at the same time, but remember it will use the same number of threads for each plot, so you can quickly overload your system.<br/>
+
+If this is a "master" node, i.e. one started with --system.hosts, you can view all other miners plots in the System Dashboard section.
+
+
+Please report any issues you find<br/>
+
+
+Burst: BURST-JSES-5WN7-PHD8-7CQJ6  Bitcoin: BURST-JSES-5WN7-PHD8-7CQJ6
 
 
 

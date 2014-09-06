@@ -6,6 +6,8 @@ Burst Mining System is a BurstCoin pool miner and plot generator with a web user
 It also allows you to view your mining system all in one place. For instance if you multiple miners running
 on multiple servers you can view their stats in one view.
 
+This is a V2 Pool only mining client
+
 <h2>Build</h2>
 
 <h3>Requirements</h3>

@@ -8,11 +8,20 @@ on multiple servers you can view their stats in one view.
 
 <h2>Build</h2>
 
+<h3>Requirements</h3>
+
+Java JDK 1.7 or above<br/>
+Maven<br/>
+
+<h3>Command</h3>
+
 mvn package
 
 this will produce a jar called mining-system-1.0.jar in the 'target' folder.
 
 <h2>Run</h2> 
+
+Using a jvm 1.7 or above run;<br/>
 
 java -jar mining-system-1.0.jar --pool.url=http://{pool.hostname}:{pool.port} 
 

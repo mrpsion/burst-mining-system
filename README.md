@@ -6,7 +6,7 @@ Burst Mining System is a BurstCoin pool miner and plot generator with a web user
 It also allows you to view your mining system all in one place. For instance if you multiple miners running
 on multiple servers you can view their stats in one view.
 
-This is a V2 Pool only mining client
+This is a V2 Pool only mining client.  It supports both Uray and Offical style v2 pools. If you are going to use the offical pool, you will need set the pool.type
 
 <h2>Build</h2>
 
@@ -43,6 +43,8 @@ The port number to bind to. (If you are running multiple miners on a single host
   Number of miner threads to use. The system is coded to allow multiple mining threads, but I would think it is probably unwise to use more than 1,as it may incur more stress on your harddrives.<br/>
 <b>--system.update.time=30000</b><br/>
   How often, in milliseconds, to check with the other miners in the system to get their stats.<br/>
+<b>--pool.type=uray / offical</b><br/>
+  The miner will assume uray style pool if this argument is not present. If you would like to mine on the offical v2 pool you will need to add --pool.type=offical<br/>
 
 These options show the default values, you can override any of these with the startup argument. For instance if you only
 want to use 2 threads to generate plots you would start the mining system like this;

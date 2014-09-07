@@ -84,6 +84,8 @@ public class MiningService {
 
     Map<Long, String> loadedPassPhrases = new HashMap<Long, String>();
 
+    long lastShareSubmitTime;
+
 
     @PostConstruct
     public void init(){
@@ -92,6 +94,11 @@ public class MiningService {
         restTemplate.setMessageConverters(converters);
         loadPassPhrases();
     }
+
+    public long getLastShareSubmitTime(){
+        return lastShareSubmitTime;
+    }
+
 
 
     private void loadPassPhrases(){
@@ -234,11 +241,13 @@ public class MiningService {
 
         public synchronized void addShare(){
             this.sharesFound++;
+            lastShareSubmitTime = System.currentTimeMillis();
         }
 
         public int getShares(){
             return this.sharesFound;
         }
+
 
 
     }

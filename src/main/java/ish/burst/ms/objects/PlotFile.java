@@ -51,6 +51,8 @@ public class PlotFile {
     private int timesChecked=0;
     private int timesIncomplete=0;
 
+    long lastShareSubmitted;
+
     public double getFileSizeGb() {
         return fileSizeGb;
     }
@@ -138,6 +140,7 @@ public class PlotFile {
 
     synchronized public void addShare(){
         sharesFound++;
+        lastShareSubmitted = System.currentTimeMillis();
     }
 
     synchronized public void addChecked(){

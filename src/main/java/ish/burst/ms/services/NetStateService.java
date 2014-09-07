@@ -48,7 +48,7 @@ public class NetStateService {
 
     RestTemplate restTemplate = new RestTemplate();
 
-
+    long startUpTime;
 
     private NetState currentState;
 
@@ -59,16 +59,16 @@ public class NetStateService {
 
     @PostConstruct
     public void init(){
+        startUpTime = System.currentTimeMillis();
         enableSSL();
         new UpdateNetState().run();
         scheduler.scheduleAtFixedRate(new UpdateNetState(),updateInterval);
     }
 
-    public void detectPoolType(){
 
-
+    public long getStartUpTime(){
+        return this.startUpTime;
     }
-
 
 
     private void enableSSL() {

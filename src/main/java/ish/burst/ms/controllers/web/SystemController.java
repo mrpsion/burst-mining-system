@@ -46,7 +46,7 @@ public class SystemController {
         model.put("totalChecked",totalChecked);
         model.put("totalInterrupted",totalInterrupted);
 
-
+        model.put("systemInfos",systemService.getSystemInfos());
 
         return "system";
     }

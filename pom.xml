@@ -6,7 +6,7 @@
 
     <groupId>ish.burst</groupId>
     <artifactId>mining-system</artifactId>
-    <version>1.11</version>
+    <version>1.12</version>
 
     <parent>
         <groupId>org.springframework.boot</groupId>

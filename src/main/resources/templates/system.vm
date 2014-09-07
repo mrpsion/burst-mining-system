@@ -9,6 +9,47 @@
         <!-- /.col-lg-12 -->
     </div>
     <!-- /.row -->
+
+    <div class="row">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                Miner Status
+            </div>
+
+        <div class="panel-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered table-hover">
+                    <thead>
+                    <tr>
+                        <th>Miner</th>
+                        <th>Uptime</th>
+                        <th>Time Since Last Share</th>
+
+                    </tr>
+                    </thead>
+                    <tbody>
+                    #foreach($info in $systemInfos)
+                    #if($info.uptime == 0)
+                    <tr class="danger">
+                        <td>$info.name - Offline</td>
+                        <td>---</td>
+                        <td>---</td>
+                    </tr>
+                    #else
+                    <tr class="success">
+                        <td>$info.name</td>
+                        <td>$info.uptimeH</td>
+                        <td>$info.timeSinceLastShareH</td>
+                    </tr>
+                    #end
+                    #end
+                    </tbody>
+                </table>
+            </div>
+        </div>
+      </div>
+
+    </div>
     <div class="row">
             <div class="panel panel-default">
                 <div class="panel-heading">
@@ -50,9 +91,6 @@
                             </tbody>
                         </table>
                     </div>
-                    #foreach($plot in $plots)
-
-                    #end
                 </div>
                 <!-- /.panel-body -->
             </div>

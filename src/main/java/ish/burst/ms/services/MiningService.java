@@ -115,13 +115,15 @@ public class MiningService {
 
 
     public void stopAndRestartMining(){
+
+
+
         for(PlotFileMiner miner : minerThreads){
             miner.stop();
-            minerThreads.remove(miner);
             miner.plotFile.addIncomplete();
-            LOGGER.info("Stopped mining {"+miner.plotFile.getUUID()+"} due to block change.");
-
+            LOGGER.info("Stopped mining {"+miner.plotFile.getUUID()+"} due to block change. Submitted {"+miner.getShares()+"} shares.");
         }
+        minerThreads.clear();
         this.processing = null;
         while(this.processing==null){
             this.processing = netStateService.getCurrentState();
@@ -144,6 +146,8 @@ public class MiningService {
         private PlotFile plotFile;
         private int scoopnum;
         private boolean running=true;
+        private int sharesFound=0;
+        private long lowestShare;
 
         public void stop(){
             running=false;
@@ -185,7 +189,7 @@ public class MiningService {
                 LOGGER.info("Error reading file: " + plotFile.getPlotFile().getName());
             }
 
-            LOGGER.info("Finished mining {"+plotFile.getUUID()+"}");
+            LOGGER.info("Finished mining {"+plotFile.getUUID()+"} submitted {"+sharesFound+"} shares");
             plotFile.addChecked();
             minerThreads.remove(this);
         }
@@ -207,7 +211,7 @@ public class MiningService {
 
                 if(!running)return;
             }
-            shareExecutor.execute(new SubmitShare(lowestscoop,plotFile));
+            shareExecutor.execute(new SubmitShare(lowestscoop,plotFile,this));
 
         }
 
@@ -221,12 +225,22 @@ public class MiningService {
                 BigInteger num = new BigInteger(1, new byte[] {hash[7], hash[6], hash[5], hash[4], hash[3], hash[2], hash[1], hash[0]});
                 BigInteger deadline = num.divide(BigInteger.valueOf(processing.getBaseTargetL()));
                 if(deadline.compareTo(BigInteger.valueOf(processing.getTargetDeadlineL())) <= 0) {
-                    shareExecutor.execute(new SubmitShare(chunk_start_nonce+i, plotFile));
+                    shareExecutor.execute(new SubmitShare(chunk_start_nonce+i, plotFile,this));
                 }
                 if(!running)return;
             }
 
         }
+
+        public synchronized void addShare(){
+            this.sharesFound++;
+        }
+
+        public int getShares(){
+            return this.sharesFound;
+        }
+
+
     }
 
 
@@ -234,33 +248,32 @@ public class MiningService {
 
         long nonce;
         PlotFile plotFile;
+        PlotFileMiner miner;
 
-        public SubmitShare(long nonce,PlotFile plotFile){
+        public SubmitShare(long nonce,PlotFile plotFile,PlotFileMiner miner){
             this.nonce = nonce;
             this.plotFile = plotFile;
+            this.miner = miner;
         }
 
 
         @Override
         public void run() {
+            String shareRequest = plotFile.getAddress() + ":" + nonce + ":" + processing.getHeight();
             try {
-
                 if(poolType.equals(POOL_TYPE_URAY)) {
-                    String shareRequest = plotFile.getAddress() + ":" + nonce + ":" + processing.getHeight();
-                    LOGGER.info("Submitting Share {" + shareRequest + "}");
                     String request = poolUrl + "/burst?requestType=submitNonce&secretPhrase=pool-mining&nonce=" + Convert.toUnsignedLong(nonce) + "&accountId=" + Convert.toUnsignedLong(plotFile.getAddress());
                     String response = restTemplate.postForObject(request, shareRequest, String.class);
-                    LOGGER.info("Response {" + response + "}");
                     plotFile.addShare();
+                    miner.addShare();
                 }else if(poolType.equals(POOL_TYPE_OFFICAL)){
-                    String shareRequest = plotFile.getAddress()+":"+nonce+":"+processing.getHeight()+"\n";
-                    LOGGER.info("Submitting Share {"+shareRequest+"}");
+                    shareRequest = plotFile.getAddress()+":"+nonce+":"+processing.getHeight()+"\n";
                     String response = restTemplate.postForObject(poolUrl + "/pool/submitWork",shareRequest,String.class);
-                    LOGGER.info("Response {"+response+"}");
                     plotFile.addShare();
+                    miner.addShare();
                 }
             }catch(Exception ex){
-                LOGGER.info("Failed to submitShare");
+                LOGGER.info("Failed to submitShare {"+shareRequest+"}");
             }
         }
     }

@@ -17,6 +17,7 @@ import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * Created by ihartney on 9/2/14.
@@ -148,7 +149,10 @@ public class PlotService {
             }
         }
 
-        for(PlotFile plotFile : plots){
+        Iterator<PlotFile> iter = plots.iterator();
+
+        while(iter.hasNext()){
+            PlotFile plotFile = iter.next();
             boolean exists = false;
             for(File file : files){
                 if(file.getName().equals(plotFile.getPlotFile().getName())){
@@ -156,7 +160,7 @@ public class PlotService {
                 }
             }
             if(!exists){
-                plots.remove(plotFile);
+                iter.remove();
             }
         }
     }

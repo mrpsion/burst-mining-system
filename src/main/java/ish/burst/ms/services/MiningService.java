@@ -46,11 +46,17 @@ import java.util.Map;
 @Scope("singleton")
 public class MiningService {
 
-
+    public static String POOL_TYPE_URAY="uray";
+    public static String POOL_TYPE_OFFICAL="offical";
 
     private static final Log LOGGER = LogFactory.getLog(MiningService.class);
 
     RestTemplate restTemplate = new RestTemplate();
+
+    @Autowired
+    @Value("${pool.type}")
+    String poolType;
+
 
     @Autowired
     @Value("${pool.url}")
@@ -165,8 +171,11 @@ public class MiningService {
                     f.seek((i * plotFile.getStaggeramt() * MiningPlot.PLOT_SIZE) + (scoopnum * plotFile.getStaggeramt() * MiningPlot.SCOOP_SIZE));
                     byte[] chunk = new byte[(int) (plotFile.getStaggeramt() * MiningPlot.SCOOP_SIZE)];
                     f.readFully(chunk);
-
-                    checkChunkPool(chunk);
+                    if(poolType.equals(POOL_TYPE_URAY)) {
+                        checkChunkPoolUray(chunk,plotFile.getStartnonce() + (i * plotFile.getStaggeramt()));
+                    }else if(poolType.equals(POOL_TYPE_OFFICAL)){
+                        checkChunkPoolOffical(chunk,plotFile.getStartnonce() + (i * plotFile.getStaggeramt()));
+                    }
                     if(!running)return;
                 }
             } catch (FileNotFoundException e) {
@@ -181,7 +190,7 @@ public class MiningService {
             minerThreads.remove(this);
         }
 
-        private void checkChunkPool(byte[] chunk){
+        private void checkChunkPoolUray(byte[] chunk,long chunk_start_nonce){
             Shabal256 md = new Shabal256();
             BigInteger lowest = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
             long lowestscoop = 0;
@@ -193,12 +202,29 @@ public class MiningService {
                 BigInteger num = new BigInteger(1, new byte[] {hash[7], hash[6], hash[5], hash[4], hash[3], hash[2], hash[1], hash[0]});
                 if(num.compareTo(lowest) < 0) {
                     lowest = num;
-                    lowestscoop = plotFile.getStartnonce() + i;
+                    lowestscoop = chunk_start_nonce + i;
                 }
 
                 if(!running)return;
             }
             shareExecutor.execute(new SubmitShare(lowestscoop,plotFile));
+
+        }
+
+        private void checkChunkPoolOffical(byte[] chunk,long chunk_start_nonce){
+            Shabal256 md = new Shabal256();
+            for(long i = 0; i < plotFile.getStaggeramt(); i++) {
+                md.reset();
+                md.update(processing.getGensig());
+                md.update(chunk, (int) (i * MiningPlot.SCOOP_SIZE), MiningPlot.SCOOP_SIZE);
+                byte[] hash = md.digest();
+                BigInteger num = new BigInteger(1, new byte[] {hash[7], hash[6], hash[5], hash[4], hash[3], hash[2], hash[1], hash[0]});
+                BigInteger deadline = num.divide(BigInteger.valueOf(processing.getBaseTargetL()));
+                if(deadline.compareTo(BigInteger.valueOf(processing.getTargetDeadlineL())) <= 0) {
+                    shareExecutor.execute(new SubmitShare(chunk_start_nonce+i, plotFile));
+                }
+                if(!running)return;
+            }
 
         }
     }
@@ -218,12 +244,21 @@ public class MiningService {
         @Override
         public void run() {
             try {
-                String shareRequest = plotFile.getAddress()+":"+nonce+":"+processing.getHeight()+"\n";
-                LOGGER.info("Submitting Share {"+shareRequest+"}");
-                String request = poolUrl+"/burst?requestType=submitNonce&secretPhrase=pool-mining&nonce="+Convert.toUnsignedLong(nonce)+"&accountId="+Convert.toUnsignedLong(plotFile.getAddress());
-                String response = restTemplate.postForObject(request,shareRequest,String.class);
-                LOGGER.info("Response {"+response+"}");
-                plotFile.addShare();
+
+                if(poolType.equals(POOL_TYPE_URAY)) {
+                    String shareRequest = plotFile.getAddress() + ":" + nonce + ":" + processing.getHeight();
+                    LOGGER.info("Submitting Share {" + shareRequest + "}");
+                    String request = poolUrl + "/burst?requestType=submitNonce&secretPhrase=pool-mining&nonce=" + Convert.toUnsignedLong(nonce) + "&accountId=" + Convert.toUnsignedLong(plotFile.getAddress());
+                    String response = restTemplate.postForObject(request, shareRequest, String.class);
+                    LOGGER.info("Response {" + response + "}");
+                    plotFile.addShare();
+                }else if(poolType.equals(POOL_TYPE_OFFICAL)){
+                    String shareRequest = plotFile.getAddress()+":"+nonce+":"+processing.getHeight()+"\n";
+                    LOGGER.info("Submitting Share {"+shareRequest+"}");
+                    String response = restTemplate.postForObject(poolUrl + "/pool/submitWork",shareRequest,String.class);
+                    LOGGER.info("Response {"+response+"}");
+                    plotFile.addShare();
+                }
             }catch(Exception ex){
                 LOGGER.info("Failed to submitShare");
             }

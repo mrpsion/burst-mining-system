@@ -25,7 +25,7 @@ import java.util.zip.CRC32;
  */
 public class PlotFile {
 
-    Log logger = LogFactory.getLog(this.getClass());
+    private static final Log LOGGER = LogFactory.getLog(PlotFile.class);
 
     PlotService plotService;
     File plotFile;
@@ -248,7 +248,7 @@ public class PlotFile {
         @Override
         public void run() {
             try{out=new FileOutputStream(plotFile);}catch(IOException ioex){
-                logger.error("Error opening PlotFile",ioex);
+                LOGGER.error("Error opening PlotFile",ioex);
                 return;
             }
             currentNonce = startnonce;
@@ -264,6 +264,7 @@ public class PlotFile {
                     out.write(outputbuffer);
                     out.flush();
                 }catch(IOException ioex){
+                    LOGGER.error("Error writing plotFile {"+plotFile.getName()+"}");
                     return;
                 }
                 currentNonce += staggeramt;

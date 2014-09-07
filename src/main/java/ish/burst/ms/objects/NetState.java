@@ -12,10 +12,20 @@ public class NetState {
     private String height;
     private String generationSignature;
     private String baseTarget;
+    private String targetDeadline;
     private byte[] gensig;
     private long heightL;
     private long baseTargetL;
+    private long targetDeadlineL;
 
+    public String getTargetDeadline() {
+        return targetDeadline;
+    }
+
+    public void setTargetDeadline(String targetDeadline) {
+        this.targetDeadlineL = Long.valueOf(targetDeadline);
+        this.targetDeadline = targetDeadline;
+    }
 
     public String getHeight() {
         return height;
@@ -61,6 +71,9 @@ public class NetState {
 
     }
 
+    public long getTargetDeadlineL(){
+        return targetDeadlineL;
+    }
 
     public static byte[] parseHexString(String hex) {
         byte[] bytes = new byte[hex.length() / 2];

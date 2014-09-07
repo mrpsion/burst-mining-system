@@ -24,6 +24,11 @@ import javax.net.ssl.X509TrustManager;
 @Scope("singleton")
 public class NetStateService {
 
+    @Autowired
+    @Value("${pool.type}")
+    String poolType;
+
+
     private static final Log LOGGER = LogFactory.getLog(NetStateService.class);
 
     @Autowired
@@ -57,6 +62,11 @@ public class NetStateService {
         enableSSL();
         new UpdateNetState().run();
         scheduler.scheduleAtFixedRate(new UpdateNetState(),updateInterval);
+    }
+
+    public void detectPoolType(){
+
+
     }
 
 
@@ -101,7 +111,14 @@ public class NetStateService {
         @Override
         public void run() {
             try {
-                NetState requestedState = restTemplate.getForObject(poolUrl + "/burst?requestType=getMiningInfo", NetState.class);
+
+                NetState requestedState = null;
+                if(poolType.equals(MiningService.POOL_TYPE_URAY)) {
+                    requestedState = restTemplate.getForObject(poolUrl + "/burst?requestType=getMiningInfo", NetState.class);
+                }else if(poolType.equals(MiningService.POOL_TYPE_OFFICAL)){
+                    requestedState = restTemplate.getForObject(poolUrl + "/pool/getMiningInfo", NetState.class);
+
+                }
                 if (currentState == null) {
                     setCurrentState(requestedState);
                     miningService.stopAndRestartMining();

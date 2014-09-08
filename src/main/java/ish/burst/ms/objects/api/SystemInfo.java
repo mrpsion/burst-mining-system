@@ -1,5 +1,7 @@
 package ish.burst.ms.objects.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -11,8 +13,6 @@ public class SystemInfo {
 
     long uptime;
     long timeSinceLastShare;
-
-
     String name;
 
     public long getUptime() {
@@ -30,24 +30,25 @@ public class SystemInfo {
     public void setTimeSinceLastShare(long timeSinceLastShare) {
         this.timeSinceLastShare = timeSinceLastShare;
     }
-
+    @JsonIgnore
     public String getName() {
         return name;
     }
-
+    @JsonIgnore
     public void setName(String name) {
         this.name = name;
     }
 
+    @JsonIgnore
     public String getUptimeH(){
         return convertDurationToH(this.uptime);
     }
-
+    @JsonIgnore
     public String getTimeSinceLastShareH(){
         return convertDurationToH(this.timeSinceLastShare);
     }
 
-
+    @JsonIgnore
     private String convertDurationToH(long duration){
 
         String remainingStr = "";

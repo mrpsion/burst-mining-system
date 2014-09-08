@@ -86,6 +86,18 @@ public class MiningService {
 
     long lastShareSubmitTime;
 
+    BigInteger deadline = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
+
+
+
+       public synchronized void registerBestShareForChunk(BigInteger lowestInChunk,long nonce,PlotFile plotFile){
+           if(lowestInChunk.compareTo(deadline) < 0) {
+               deadline = lowestInChunk;
+               shareExecutor.execute(new SubmitShare(nonce,plotFile,deadline));
+           }
+       }
+
+
 
     @PostConstruct
     public void init(){
@@ -128,7 +140,7 @@ public class MiningService {
         for(PlotFileMiner miner : minerThreads){
             miner.stop();
             miner.plotFile.addIncomplete();
-            LOGGER.info("Stopped mining {"+miner.plotFile.getUUID()+"} due to block change. Submitted {"+miner.getShares()+"} shares.");
+            LOGGER.info("Stopped mining {"+miner.plotFile.getUUID()+"} due to block change");
         }
         minerThreads.clear();
         this.processing = null;
@@ -137,11 +149,16 @@ public class MiningService {
             if(this.processing==null)try{Thread.sleep(500);}catch(Exception ex){}
         }
 
+        deadline = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
         for(PlotFile plotFile: plotService.getPlots()){
             PlotFileMiner miner = new PlotFileMiner(plotFile);
             minerThreads.add(miner);
             executor.execute(miner);
         }
+
+
+
+
 
     }
 
@@ -153,8 +170,6 @@ public class MiningService {
         private PlotFile plotFile;
         private int scoopnum;
         private boolean running=true;
-        private int sharesFound=0;
-        private long lowestShare;
 
         public void stop(){
             running=false;
@@ -196,7 +211,7 @@ public class MiningService {
                 LOGGER.info("Error reading file: " + plotFile.getPlotFile().getName());
             }
 
-            LOGGER.info("Finished mining {"+plotFile.getUUID()+"} submitted {"+sharesFound+"} shares");
+            LOGGER.info("Finished mining {"+plotFile.getUUID()+"}");
             plotFile.addChecked();
             minerThreads.remove(this);
         }
@@ -211,15 +226,16 @@ public class MiningService {
                 md.update(chunk, (int) (i * MiningPlot.SCOOP_SIZE), MiningPlot.SCOOP_SIZE);
                 byte[] hash = md.digest();
                 BigInteger num = new BigInteger(1, new byte[] {hash[7], hash[6], hash[5], hash[4], hash[3], hash[2], hash[1], hash[0]});
-                if(num.compareTo(lowest) < 0) {
-                    lowest = num;
+                BigInteger deadline = num.divide(BigInteger.valueOf(processing.getBaseTargetL()));
+
+                int compare = deadline.compareTo(lowest);
+                if(compare < 0) {
+                    lowest = deadline;
                     lowestscoop = chunk_start_nonce + i;
                 }
-
                 if(!running)return;
             }
-            shareExecutor.execute(new SubmitShare(lowestscoop,plotFile,this));
-
+            registerBestShareForChunk(lowest,lowestscoop,plotFile);
         }
 
         private void checkChunkPoolOffical(byte[] chunk,long chunk_start_nonce){
@@ -232,23 +248,12 @@ public class MiningService {
                 BigInteger num = new BigInteger(1, new byte[] {hash[7], hash[6], hash[5], hash[4], hash[3], hash[2], hash[1], hash[0]});
                 BigInteger deadline = num.divide(BigInteger.valueOf(processing.getBaseTargetL()));
                 if(deadline.compareTo(BigInteger.valueOf(processing.getTargetDeadlineL())) <= 0) {
-                    shareExecutor.execute(new SubmitShare(chunk_start_nonce+i, plotFile,this));
+                    shareExecutor.execute(new SubmitShare(chunk_start_nonce+i, plotFile,deadline));
                 }
                 if(!running)return;
             }
 
         }
-
-        public synchronized void addShare(){
-            this.sharesFound++;
-            lastShareSubmitTime = System.currentTimeMillis();
-        }
-
-        public int getShares(){
-            return this.sharesFound;
-        }
-
-
 
     }
 
@@ -257,30 +262,32 @@ public class MiningService {
 
         long nonce;
         PlotFile plotFile;
-        PlotFileMiner miner;
+        BigInteger deadline;
 
-        public SubmitShare(long nonce,PlotFile plotFile,PlotFileMiner miner){
+        public SubmitShare(long nonce,PlotFile plotFile,BigInteger deadline){
             this.nonce = nonce;
             this.plotFile = plotFile;
-            this.miner = miner;
+            this.deadline = deadline;
         }
 
 
         @Override
         public void run() {
-            String shareRequest = plotFile.getAddress() + ":" + nonce + ":" + processing.getHeight();
+            String shareRequest = plotFile.getAddress() + ":" + nonce + ":" + processing.getHeight()+" deadline {"+deadline+"}";
+            LOGGER.info("Submitting share {"+shareRequest+"}");
             try {
                 if(poolType.equals(POOL_TYPE_URAY)) {
                     String request = poolUrl + "/burst?requestType=submitNonce&secretPhrase=pool-mining&nonce=" + Convert.toUnsignedLong(nonce) + "&accountId=" + Convert.toUnsignedLong(plotFile.getAddress());
                     String response = restTemplate.postForObject(request, shareRequest, String.class);
+                    LOGGER.info("Reponse {"+response+"}}");
                     plotFile.addShare();
-                    miner.addShare();
                 }else if(poolType.equals(POOL_TYPE_OFFICAL)){
                     shareRequest = plotFile.getAddress()+":"+nonce+":"+processing.getHeight()+"\n";
                     String response = restTemplate.postForObject(poolUrl + "/pool/submitWork",shareRequest,String.class);
+                    LOGGER.info("Reponse {"+response+"}}");
                     plotFile.addShare();
-                    miner.addShare();
                 }
+                lastShareSubmitTime = System.currentTimeMillis();
             }catch(Exception ex){
                 LOGGER.info("Failed to submitShare {"+shareRequest+"}");
             }

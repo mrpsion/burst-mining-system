@@ -247,7 +247,9 @@ public class MiningService {
                 byte[] hash = md.digest();
                 BigInteger num = new BigInteger(1, new byte[] {hash[7], hash[6], hash[5], hash[4], hash[3], hash[2], hash[1], hash[0]});
                 BigInteger deadline = num.divide(BigInteger.valueOf(processing.getBaseTargetL()));
-                if(deadline.compareTo(BigInteger.valueOf(processing.getTargetDeadlineL())) <= 0) {
+                int compare = deadline.compareTo(BigInteger.valueOf(processing.getTargetDeadlineL()));
+
+                if(compare <= 0) {
                     shareExecutor.execute(new SubmitShare(chunk_start_nonce+i, plotFile,deadline));
                 }
                 if(!running)return;

@@ -1,0 +1,30 @@
+#parse("header.vm")
+<div id="page-wrapper">
+<pre id="log">
+
+
+</pre>
+</div>
+
+<script>
+
+    $(document).ready(function() {
+        #if($host == 'local')
+        logSocket = new SockJS("/logWs");
+        #else
+        logSocket = new SockJS("http://$host/logWs");
+        #end
+        logSocket.onopen = function () {
+                setInterval(function() {
+                    logSocket.send('ping');
+                }, 5000);
+            };
+        logSocket.onmessage = function (message) {
+                $('#log').append(message.data+'</br>');
+            };
+
+    });
+</script>
+
+
+#include("footer.vm")

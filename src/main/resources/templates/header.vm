@@ -47,7 +47,7 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
     </button>
-    <a class="navbar-brand" href="/">Burst Mining System v1.13</a>
+    <a class="navbar-brand" href="/">Burst Mining System v1.20</a>
 </div>
 <!-- /.navbar-header -->
 
@@ -59,7 +59,23 @@
                 <a href="/"><i class="fa fa-dashboard fa-fw"></i> Local Dashboard</a>
             </li>
             <li>
-                <a href="/system"><i class="fa fa-dashboard fa-fw"></i> System Dashboard</a>
+                <a href="/system"><i class="fa fa-sitemap fa-fw"></i> System Dashboard</a>
+            </li>
+            <li>
+                <a href="#"><i class="fa fa-files-o fa-fw"></i> Logs<span class="fa arrow"></span></a>
+                <ul class="nav nav-second-level">
+                    #foreach($info in $systemInfos)
+                    #if($info.uptime == 0)
+                    <li>
+                        <a href="#"> $info.name (offline)</a>
+                    </li>
+                    #else
+                    <li>
+                        <a href="/log?host=$info.name"> $info.name</a>
+                    </li>
+                    #end
+                    #end
+                </ul>
             </li>
         </ul>
     </div>

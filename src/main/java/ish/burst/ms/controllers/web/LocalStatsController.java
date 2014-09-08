@@ -5,6 +5,7 @@ import ish.burst.ms.objects.GeneratePlotRequest;
 import ish.burst.ms.services.FileSystemInfo;
 import ish.burst.ms.services.NetStateService;
 import ish.burst.ms.services.PlotService;
+import ish.burst.ms.services.SystemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -28,12 +29,16 @@ public class LocalStatsController {
     @Autowired
     PlotService plotService;
 
+    @Autowired
+    SystemService systemService;
+
 
     @RequestMapping("/")
     public String localdashboard(Map<String, Object> model) {
         model.put("fileSystemInfo",fileSystemInfo);
         model.put("netState",netStateService.getCurrentState());
         model.put("plots",plotService.getPlots());
+        model.put("systemInfos",systemService.getSystemInfos());
         return "local";
     }
 

@@ -1,5 +1,6 @@
 package ish.burst.ms;
 
+import ish.burst.ms.controllers.websocket.LogWebSocketHandler;
 import ish.burst.ms.services.NetStateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +11,9 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
+import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
 /**
  * Created by ihartney on 9/1/14.
@@ -17,7 +21,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 @Configuration
 @EnableAutoConfiguration
 @ComponentScan
-public class MiningSystemApplication {
+@EnableWebSocket
+public class MiningSystemApplication implements WebSocketConfigurer {
 
     @Autowired
     @Value("${plot.generation.threads}")
@@ -78,9 +83,23 @@ public class MiningSystemApplication {
         return new NetStateService();
     }
 
+    @Bean
+    public LogWebSocketHandler logWebSocketHandler(){
+        return new LogWebSocketHandler();
+    }
+
+    @Override
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry webSocketHandlerRegistry) {
+        webSocketHandlerRegistry.addHandler(logWebSocketHandler(), "/logWs").withSockJS();
+
+    }
+
     public static void main(String[] args) throws Exception {
         SpringApplication.run(MiningSystemApplication.class, args);
     }
+
+
+
 
 
 }

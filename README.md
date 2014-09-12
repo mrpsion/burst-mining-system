@@ -19,13 +19,13 @@ Maven<br/>
 
 mvn package
 
-this will produce a jar called mining-system-1.2.jar in the 'target' folder.
+this will produce a jar called mining-system-1.20.jar in the 'target' folder.
 
 <h2>Run</h2> 
 
 Using a jvm 1.7 or above run;<br/>
 
-java -jar mining-system-1.2.jar --pool.url=http://{pool.hostname}:{pool.port} 
+java -jar mining-system-1.20.jar --pool.url=http://{pool.hostname}:{pool.port} 
 
 <h3>Other options</h3>
 
@@ -49,7 +49,7 @@ The port number to bind to. (If you are running multiple miners on a single host
 These options show the default values, you can override any of these with the startup argument. For instance if you only
 want to use 2 threads to generate plots you would start the mining system like this;
 
-java -jar mining-system-1.0.jar --pool.url=http://{pool.hostname}:{pool.port} --plot.generation.threads=2
+java -jar mining-system-1.20.jar --pool.url=http://{pool.hostname}:{pool.port} --plot.generation.threads=2
 
 
 <h2>System Monitoring</h2>

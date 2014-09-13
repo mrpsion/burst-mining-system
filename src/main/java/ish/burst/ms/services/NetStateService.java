@@ -115,7 +115,7 @@ public class NetStateService {
                 NetState requestedState = null;
                 if(poolType.equals(MiningService.POOL_TYPE_URAY)) {
                     requestedState = restTemplate.getForObject(poolUrl + "/burst?requestType=getMiningInfo", NetState.class);
-                }else if(poolType.equals(MiningService.POOL_TYPE_OFFICAL)){
+                }else if(poolType.equals(MiningService.POOL_TYPE_OFFICIAL)){
                     requestedState = restTemplate.getForObject(poolUrl + "/pool/getMiningInfo", NetState.class);
 
                 }

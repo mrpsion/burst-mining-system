@@ -47,7 +47,7 @@ import java.util.Map;
 public class MiningService {
 
     public static String POOL_TYPE_URAY="uray";
-    public static String POOL_TYPE_OFFICAL="offical";
+    public static String POOL_TYPE_OFFICIAL="official";
 
     private static final Log LOGGER = LogFactory.getLog(MiningService.class);
 
@@ -199,8 +199,8 @@ public class MiningService {
                     f.readFully(chunk);
                     if(poolType.equals(POOL_TYPE_URAY)) {
                         checkChunkPoolUray(chunk,plotFile.getStartnonce() + (i * plotFile.getStaggeramt()));
-                    }else if(poolType.equals(POOL_TYPE_OFFICAL)){
-                        checkChunkPoolOffical(chunk,plotFile.getStartnonce() + (i * plotFile.getStaggeramt()));
+                    }else if(poolType.equals(POOL_TYPE_OFFICIAL)){
+                        checkChunkPoolOfficial(chunk,plotFile.getStartnonce() + (i * plotFile.getStaggeramt()));
                     }
                     if(!running)return;
                 }
@@ -238,7 +238,7 @@ public class MiningService {
             registerBestShareForChunk(lowest,lowestscoop,plotFile);
         }
 
-        private void checkChunkPoolOffical(byte[] chunk,long chunk_start_nonce){
+        private void checkChunkPoolOfficial(byte[] chunk,long chunk_start_nonce){
             Shabal256 md = new Shabal256();
             for(long i = 0; i < plotFile.getStaggeramt(); i++) {
                 md.reset();
@@ -281,12 +281,12 @@ public class MiningService {
                 if(poolType.equals(POOL_TYPE_URAY)) {
                     String request = poolUrl + "/burst?requestType=submitNonce&secretPhrase=pool-mining&nonce=" + Convert.toUnsignedLong(nonce) + "&accountId=" + Convert.toUnsignedLong(plotFile.getAddress());
                     String response = restTemplate.postForObject(request, shareRequest, String.class);
-                    LOGGER.info("Reponse {"+response+"}}");
+                    LOGGER.info("Response {"+response+"}}");
                     plotFile.addShare();
-                }else if(poolType.equals(POOL_TYPE_OFFICAL)){
+                }else if(poolType.equals(POOL_TYPE_OFFICIAL)){
                     shareRequest = plotFile.getAddress()+":"+nonce+":"+processing.getHeight()+"\n";
                     String response = restTemplate.postForObject(poolUrl + "/pool/submitWork",shareRequest,String.class);
-                    LOGGER.info("Reponse {"+response+"}}");
+                    LOGGER.info("Response {"+response+"}}");
                     plotFile.addShare();
                 }
                 lastShareSubmitTime = System.currentTimeMillis();

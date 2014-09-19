@@ -32,12 +32,25 @@ public class MiningSystemApplication implements WebSocketConfigurer {
     @Value("${miner.threads}")
     int minerThreads;
 
+    @Autowired
+    @Value("${miner.cpu.threads}")
+    int minerCpuThreads;
+
 
     @Bean
     public ThreadPoolTaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor pool = new ThreadPoolTaskExecutor();
         pool.setCorePoolSize(5);
         pool.setMaxPoolSize(10);
+        pool.setWaitForTasksToCompleteOnShutdown(false);
+        return pool;
+    }
+
+    @Bean
+    public ThreadPoolTaskExecutor cpuMiningPool() {
+        ThreadPoolTaskExecutor pool = new ThreadPoolTaskExecutor();
+        pool.setCorePoolSize(minerCpuThreads);
+        pool.setMaxPoolSize(minerCpuThreads);
         pool.setWaitForTasksToCompleteOnShutdown(false);
         return pool;
     }

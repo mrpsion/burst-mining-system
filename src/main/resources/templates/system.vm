@@ -67,6 +67,7 @@
                                 <th>Shares</th>
                                 <th>Times Mined</th>
                                 <th>Times Interrupted</th>
+                                <th>Shares Per Block</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -78,6 +79,7 @@
                                 <td>$plot.sharesFound</td>
                                 <td>$plot.timesChecked</td>
                                 <td>$plot.timesIncomplete</td>
+                                <td>$plot.sharesPerBlock</td>
                             </tr>
                             #end
                             <tr>
@@ -87,6 +89,7 @@
                                 <td>$totalShares</td>
                                 <td>$totalChecked</td>
                                 <td>$totalInterrupted</td>
+                                <td>$totalSharesPerBlock</td>
                             </tr>
                             </tbody>
                         </table>

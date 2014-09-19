@@ -32,12 +32,14 @@ public class SystemController {
         int totalShares = 0;
         int totalChecked = 0;
         int totalInterrupted = 0;
+        double totalSharesPerBlock = 0d;
         for(Plot p : plots){
             totalFileSize+=p.getFileSizeGb();
             totalExpected+=p.getExpectedFileSizeGb();
             totalShares+=p.getSharesFound();
             totalChecked+=p.getTimesChecked();
             totalInterrupted+=p.getTimesIncomplete();
+            totalSharesPerBlock+=p.getSharesPerBlock();
         }
 
         model.put("totalSize",totalFileSize);
@@ -45,6 +47,7 @@ public class SystemController {
         model.put("totalShares",totalShares);
         model.put("totalChecked",totalChecked);
         model.put("totalInterrupted",totalInterrupted);
+        model.put("totalSharesPerBlock",totalSharesPerBlock);
 
         model.put("systemInfos",systemService.getSystemInfos());
 

@@ -1,5 +1,6 @@
 package ish.burst.ms.objects.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ish.burst.ms.objects.PlotFile;
 
 /**
@@ -25,6 +26,18 @@ public class Plot {
     private int sharesFound;
     private int timesChecked;
     private int timesIncomplete;
+
+    private String displayAddress;
+
+    public String getDisplayAddress() {
+        return displayAddress;
+    }
+
+    public void setDisplayAddress(String displayAddress) {
+        this.displayAddress = displayAddress;
+    }
+
+
 
     public String getUUID() {
         return UUID;
@@ -117,6 +130,7 @@ public class Plot {
 
     public Plot(PlotFile plotFile){
         this.address = plotFile.getAddress();
+        this.displayAddress = plotFile.getDisplayAddress();
         this.startnonce = plotFile.getStartnonce();
         this.plots = plotFile.getPlots();
         this.staggeramt = plotFile.getStaggeramt();
@@ -127,6 +141,11 @@ public class Plot {
         this.timesChecked = plotFile.getChecked();
         this.timesIncomplete = plotFile.getInterrupted();
         this.UUID = plotFile.getUUID();
+    }
+
+    @JsonIgnore
+    public double getSharesPerBlock(){
+        return (double)this.sharesFound / (double)(timesChecked+timesIncomplete);
     }
 
     public Plot(){

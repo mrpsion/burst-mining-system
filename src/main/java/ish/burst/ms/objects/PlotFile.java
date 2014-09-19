@@ -2,6 +2,7 @@ package ish.burst.ms.objects;
 
 import fr.cryptohash.MD5;
 import ish.burst.ms.services.PlotService;
+import nxt.util.Convert;
 import org.apache.catalina.util.MD5Encoder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -132,6 +133,10 @@ public class PlotFile {
 
     public void setComplete(boolean complete) {
         this.complete = complete;
+    }
+
+    public String getDisplayAddress(){
+        return Convert.toUnsignedLong(this.address);
     }
 
     public int getPercentageComplete() {

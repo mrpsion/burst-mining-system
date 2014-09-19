@@ -7,6 +7,7 @@ import ish.burst.ms.objects.PlotFile;
 import nxt.crypto.Crypto;
 import nxt.util.Convert;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +35,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by ihartney on 9/3/14.
@@ -73,8 +71,24 @@ public class MiningService {
     TaskExecutor executor;
 
     @Autowired
+    @Qualifier(value = "cpuMiningPool")
+    TaskExecutor cpuMiningPool;
+
+    @Autowired
     @Qualifier(value = "shareSubmitPool")
     TaskExecutor shareExecutor;
+
+    @Autowired
+    @Value("${miner.cpu.address}")
+    String minerCpuAddress;
+
+
+    @Autowired
+    @Value("${miner.cpu.threads}")
+    int minerCpuThreads;
+    @Autowired
+    @Value("${miner.cpu.enabled}")
+    boolean minerCpuEnabled;
 
 
     NetState processing;
@@ -88,7 +102,9 @@ public class MiningService {
 
     BigInteger deadline = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 16);
 
+    Random rand;
 
+    boolean startedCPUMining = false;
 
        public synchronized void registerBestShareForChunk(BigInteger lowestInChunk,long nonce,PlotFile plotFile){
            if(lowestInChunk.compareTo(deadline) < 0) {
@@ -101,6 +117,7 @@ public class MiningService {
 
     @PostConstruct
     public void init(){
+        rand = new Random();
         List<HttpMessageConverter<?>> converters = new ArrayList<HttpMessageConverter<?>>();
         converters.add(new StringHttpMessageConverter());
         restTemplate.setMessageConverters(converters);
@@ -109,6 +126,12 @@ public class MiningService {
 
     public long getLastShareSubmitTime(){
         return lastShareSubmitTime;
+    }
+
+
+    public synchronized long nextNonce(){
+        return (long)(rand.nextDouble()*Long.MAX_VALUE);
+
     }
 
 
@@ -136,6 +159,17 @@ public class MiningService {
     public void stopAndRestartMining(){
 
 
+        if(minerCpuEnabled){
+            if(!startedCPUMining){
+                LOGGER.info("Starting CPU Mining with {"+minerCpuThreads+"} threads");
+
+                for(int i=0;i<minerCpuThreads;i++){
+                    cpuMiningPool.execute(new CPUMiner());
+                }
+
+            }
+        }
+
 
         for(PlotFileMiner miner : minerThreads){
             miner.stop();
@@ -162,6 +196,68 @@ public class MiningService {
 
     }
 
+
+    class CPUMiner implements Runnable{
+        long address = 0;
+
+        @Override
+        public void run() {
+
+
+            if(StringUtils.isEmpty(minerCpuAddress)){
+
+            }else{
+                address = plotService.getPlots().get(0).getAddress();
+            }
+
+            if(address==0){
+                LOGGER.info("No address found for cpu mining.");
+                return;
+            }
+
+
+            while(true){
+                long nonce = nextNonce();
+
+                MiningPlot plot = new MiningPlot(address,nonce);
+                if(poolType.equals(POOL_TYPE_OFFICAL)){
+                    checkPlotOffical(plot,nonce);
+                }else if(poolType.equals(POOL_TYPE_URAY)){
+                    checkPlotOffical(plot,nonce);
+                }
+
+            }
+
+        }
+
+        public void checkPlotOffical(MiningPlot plot,long nonce){
+            ByteBuffer buf = ByteBuffer.allocate(32 + 8);
+            buf.put(processing.getGensig());
+            buf.putLong(processing.getHeightL());
+
+            Shabal256 md = new Shabal256();
+            md.update(buf.array());
+            BigInteger hashnum = new BigInteger(1, md.digest());
+            int scoopnum = hashnum.mod(BigInteger.valueOf(MiningPlot.SCOOPS_PER_PLOT)).intValue();
+            md.reset();
+            md.update(processing.getGensig());
+            plot.hashScoop(md,scoopnum);
+            byte[] hash = md.digest();
+            BigInteger num = new BigInteger(1, new byte[] {hash[7], hash[6], hash[5], hash[4], hash[3], hash[2], hash[1], hash[0]});
+            BigInteger deadline = num.divide(BigInteger.valueOf(processing.getBaseTargetL()));
+            int compare = deadline.compareTo(BigInteger.valueOf(processing.getTargetDeadlineL()));
+
+            if(compare <= 0) {
+                shareExecutor.execute(new SubmitShare(nonce, address ,deadline));
+            }
+
+        }
+
+        public void checkPlotUray(MiningPlot plot,long nonce){
+
+
+        }
+    }
 
 
 
@@ -265,30 +361,45 @@ public class MiningService {
         long nonce;
         PlotFile plotFile;
         BigInteger deadline;
+        long address;
 
         public SubmitShare(long nonce,PlotFile plotFile,BigInteger deadline){
             this.nonce = nonce;
             this.plotFile = plotFile;
             this.deadline = deadline;
+            this.address = plotFile.getAddress();
+        }
+
+        public SubmitShare(long nonce,long address,BigInteger deadline){
+            this.nonce = nonce;
+            this.deadline = deadline;
+            this.address = address;
         }
 
 
         @Override
         public void run() {
-            String shareRequest = plotFile.getAddress() + ":" + nonce + ":" + processing.getHeight()+" deadline {"+deadline+"}";
+            String shareRequest = Convert.toUnsignedLong(plotFile.getAddress()) + ":" + nonce + ":" + processing.getHeight()+" deadline {"+deadline+"}";
             LOGGER.info("Submitting share {"+shareRequest+"}");
             try {
                 if(poolType.equals(POOL_TYPE_URAY)) {
-                    String request = poolUrl + "/burst?requestType=submitNonce&secretPhrase=pool-mining&nonce=" + Convert.toUnsignedLong(nonce) + "&accountId=" + Convert.toUnsignedLong(plotFile.getAddress());
+                    String request = poolUrl + "/burst?requestType=submitNonce&secretPhrase=pool-mining&nonce=" + Convert.toUnsignedLong(nonce) + "&accountId=" + Convert.toUnsignedLong(address);
                     String response = restTemplate.postForObject(request, shareRequest, String.class);
                     LOGGER.info("Reponse {"+response+"}}");
-                    plotFile.addShare();
+                    if(plotFile==null){
+                        LOGGER.info("Submitted CPU Share.");
+                    }else{
+                        plotFile.addShare();
+                    }
                 }else if(poolType.equals(POOL_TYPE_OFFICAL)){
-                    shareRequest = plotFile.getAddress()+":"+nonce+":"+processing.getHeight()+"\n";
+                    shareRequest = Convert.toUnsignedLong(address)+":"+Convert.toUnsignedLong(nonce)+":"+processing.getHeight()+"\n";
                     String response = restTemplate.postForObject(poolUrl + "/pool/submitWork",shareRequest,String.class);
                     LOGGER.info("Reponse {"+response+"}}");
-                    plotFile.addShare();
-                }
+                    if(plotFile==null){
+                        LOGGER.info("Submitted CPU Share.");
+                    }else{
+                        plotFile.addShare();
+                    }                }
                 lastShareSubmitTime = System.currentTimeMillis();
             }catch(Exception ex){
                 LOGGER.info("Failed to submitShare {"+shareRequest+"}");
